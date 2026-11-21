@@ -10,7 +10,7 @@ _file_path: Path = Path(__file__)
 # Directory containing the current Python file
 _file_directory: Path = _file_path.parent
 
-_current_zip_path: Path = _file_directory / "yt-dlp"
+_current_zip_path: Path = _file_directory / "yt_dlp"
 
 def get_current_zip_path():
     return _current_zip_path
