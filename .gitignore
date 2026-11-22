@@ -3,6 +3,68 @@
 
 /bin/
 
+/cache/
+
+/qjs_build/
+
 /venv/
 
-/yt-dlp
+/test.png
+
+/yt_dlp
+
+# Video files
+*.mp4
+*.m4v
+*.mkv
+*.mov
+*.avi
+*.wmv
+*.flv
+*.webm
+*.mpeg
+*.mpg
+*.m2v
+*.3gp
+*.3g2
+*.ts
+*.mts
+*.m2ts
+*.vob
+*.ogv
+*.gif
+
+# Audio files
+*.mp3
+*.wav
+*.aac
+*.m4a
+*.flac
+*.ogg
+*.opus
+*.wma
+*.aiff
+*.aif
+*.alac
+*.amr
+*.mid
+*.midi
+*.ac3
+*.dts
+
+# Media containers
+*.mp4
+*.m4v
+*.mkv
+*.mov
+*.avi
+*.webm
+*.mpeg
+*.mpg
+*.3gp
+*.3g2
+*.ts
+*.mxf
+*.asf
+*.rm
+*.rmvb

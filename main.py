@@ -19,46 +19,9 @@ import InfoDict
 
 import os
 
-import platform
-
-from pathlib import Path
-
 from typing import ClassVar
 
-class Paths:
-
-    @staticmethod
-    def _executableFileExtension() -> str:
-        system: str = platform.system()
-        match system:
-            case "Windows":
-                return ".exe"
-            case "Linux" | "Darwin":
-                return ""
-            case _:
-                raise OSError(f"Unsupported platform: '{system}'")
-
-    @staticmethod
-    def scriptDir() -> Path:
-        return Path(__file__).resolve().parent
-
-    @staticmethod
-    def ffmpeg() -> Path:
-        return Paths.scriptDir() / f"ffmpeg{Paths._executableFileExtension()}"
-
-    @staticmethod
-    def ffprobe() -> Path:
-        return Paths.scriptDir() / f"ffprobe{Paths._executableFileExtension()}"
-
-    @staticmethod
-    def qjs() -> Path:
-        return Paths.scriptDir() / f"qjs{Paths._executableFileExtension()}"
-
-    @staticmethod
-    def yt_dlp_cache_dir() -> Path:
-        directory = Paths.scriptDir() / "cache" / "yt-dlp"
-        directory.mkdir(parents=True, exist_ok=True)
-        return directory
+from Paths import Paths
 
 def validate_tools():
     for tool in [
@@ -194,7 +157,9 @@ class DownloadQueue:
 
                 last_update_time: float = 0.0
                 def progressHook(data):
+                    nonlocal downloadDataId
                     nonlocal last_update_time
+
                     now: float = time.time()
 
                     # throttle downloadData updates
@@ -271,6 +236,8 @@ class DownloadQueue:
                     downloadOptions = videoOptions
                 elif downloadData.downloadType == DownloadData.DownloadType.AUDIO:
                     downloadOptions = audioOptions
+                else:
+                    raise ValueError(f"Error: download data with id '{downloadDataId}' has invalid or unsupported download type '{downloadData.downloadType}'")
 
                 import yt_dlp
 
@@ -282,7 +249,7 @@ class DownloadQueue:
                     )
 
             except Exception as e:
-                print("Failed to download: ", e)
+                print("Failed to download media: ", e)
             finally:
                 self.removeDownloadById(downloadData.id)
 
