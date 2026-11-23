@@ -1,8 +1,17 @@
 
 @echo off
 
+REM Initialize project directories
 call "%~dp0PROJECT_ROOT_DIR.bat"
+if not defined PROJECT_ROOT_DIR (
+    echo ERROR: Failed to define project root directory.
+    exit /b 1
+)
 call "%~dp0PROJECT_WINDOWS_BIN_DIR.bat"
+if not defined PROJECT_WINDOWS_BIN_DIR (
+    echo ERROR: Failed to define project windows binary directory.
+    exit /b 1
+)
 
 REM Navigate to the project root directory.
 echo.

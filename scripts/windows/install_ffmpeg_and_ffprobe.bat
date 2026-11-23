@@ -4,7 +4,15 @@ setlocal
 
 REM Initialize project directories
 call "%~dp0PROJECT_ROOT_DIR.bat"
+if not defined PROJECT_ROOT_DIR (
+    echo ERROR: Failed to define project root directory.
+    exit /b 1
+)
 call "%~dp0PROJECT_WINDOWS_BIN_DIR.bat"
+if not defined PROJECT_WINDOWS_BIN_DIR (
+    echo ERROR: Failed to define project windows binary directory.
+    exit /b 1
+)
 
 REM Define download URLs
 set "GITHUB_YT_DLP_FFMPEG_BUILDS_LATEST_RELEASE_URL=https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest"
