@@ -2,8 +2,9 @@
 from Paths import Paths
 
 from dataclasses import dataclass
-import os
+from pathlib import Path
 import subprocess
+import tkinter as tk
 
 @dataclass
 class ValidateBinaryResult:
@@ -17,7 +18,6 @@ class ValidateBinariesResult:
     ffprobe: ValidateBinaryResult
     qjs: ValidateBinaryResult
 
-    @property
     def isWorking(self) -> bool:
         return (
             self.ffmpeg.isWorking
@@ -25,44 +25,69 @@ class ValidateBinariesResult:
             and self.qjs.isWorking
         )
 
+    def errorMessage(self) -> str | None:
+
+        if self.isWorking():
+            return None
+
+        return (
+            "ffmpeg:" + "\n"
+            "Is installed: " + ("Yes" if self.ffmpeg.isInstalled else "No") + "\n"
+            "Is Working: " + ("Yes" if self.ffmpeg.isWorking else "No") + "\n"
+            "\n"
+            "ffprobe:" + "\n"
+            "Is installed: " + ("Yes" if self.ffprobe.isInstalled else "No") + "\n"
+            "Is Working: " + ("Yes" if self.ffprobe.isWorking else "No") + "\n"
+            "\n"
+            "qjs:" + "\n"
+            "Is installed: " + ("Yes" if self.qjs.isInstalled else "No") + "\n"
+            "Is Working: " + ("Yes" if self.qjs.isWorking else "No") + "\n"
+        )
+
 def validateBinaries() -> ValidateBinariesResult:
 
-    def validateExecutable(tool: str) -> ValidateBinaryResult:
+    def validateExecutable(
+        path: Path,
+        arguements: list[str],
+        expectedReturnCode: int
+    ) -> ValidateBinaryResult:
 
-        print(f"\nLooking for executable at '{tool}'...")
+        print(f"\nLooking for executable at '{str(path)}'...")
 
-        isInstalled: bool = os.path.isfile(tool)
+        isInstalled: bool = path.is_file()
+
+        toolName: str = path.name
 
         if not isInstalled:
-            print(f"Missing executable: '{tool}'")
+            print(f"Missing executable: '{toolName}.'")
             return ValidateBinaryResult(
                 isInstalled=False,
                 isWorking=False
             )
 
-        print(f"Found executable: '{tool}'")
+        print(f"Found executable '{toolName}'.")
 
         try:
             result = subprocess.run(
-                [tool, "--version"],
+                args=[str(path), *arguements,],
                 capture_output=True,
                 text=True,
                 timeout=10,
                 check=False
             )
 
-            isWorking: bool = result.returncode == 0
+            isWorking: bool = result.returncode == expectedReturnCode
 
             if isWorking:
-                versionOutput = (
+                helpOutput = (
                     result.stdout.strip()
                     or result.stderr.strip()
                 )
-                print(f"Executable working:\n{versionOutput}")
+                print(f"Executable working.")
             else:
                 print(
-                    f"Executable failed with exit code "
-                    f"{result.returncode}:\n{result.stderr.strip()}"
+                    f"Executable failed with exit code {result.returncode}:\n"
+                    f"{result.stderr.strip()}."
                 )
 
             return ValidateBinaryResult(
@@ -71,10 +96,10 @@ def validateBinaries() -> ValidateBinariesResult:
             )
 
         except subprocess.TimeoutExpired:
-            print(f"Executable timed out: '{tool}'")
+            print(f"Executable timed out: '{toolName}'")
 
         except OSError as e:
-            print(f"Failed to execute '{tool}': {e}")
+            print(f"Failed to execute '{toolName}': {e}")
 
         return ValidateBinaryResult(
             isInstalled=True,
@@ -82,15 +107,21 @@ def validateBinaries() -> ValidateBinariesResult:
         )
 
     ffmpegResult: ValidateBinaryResult = validateExecutable(
-        str(Paths.ffmpeg())
+        path=Paths.ffmpeg(),
+        arguements=["-version"],
+        expectedReturnCode=0
     )
 
     ffprobeResult: ValidateBinaryResult = validateExecutable(
-        str(Paths.ffprobe())
+        path=Paths.ffprobe(),
+        arguements=["-version"],
+        expectedReturnCode=0
     )
 
     qjsResult: ValidateBinaryResult = validateExecutable(
-        str(Paths.qjs())
+        path=Paths.qjs(),
+        arguements=["--eval", "console.log('QuickJS is working!')"],
+        expectedReturnCode=0
     )
 
     return ValidateBinariesResult(
@@ -98,3 +129,21 @@ def validateBinaries() -> ValidateBinariesResult:
         ffprobe=ffprobeResult,
         qjs=qjsResult
     )
+
+def setWidgetState(
+    widget: tk.Widget,
+    enabled: bool
+) -> None:
+
+    state: str = "normal" if enabled else "disabled"
+
+    try:
+        widget.configure(state=state)
+    except tk.TclError:
+        pass
+
+    for childWidget in widget.winfo_children():
+        setWidgetState(
+            widget=childWidget,
+            enabled=enabled
+        )

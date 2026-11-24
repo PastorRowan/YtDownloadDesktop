@@ -1,6 +1,5 @@
 
 import platform
-
 from pathlib import Path
 
 class Paths:

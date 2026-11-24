@@ -48,8 +48,18 @@ class DownloadQueue:
                     else:
                         raise Exception("downloadData is None because queue is empty")
 
-                if downloadData is None or downloadDataId is None:
-                    print(f"Error: failed to get the 1st download")
+                if (
+                    downloadData is None
+                ) or (
+                    downloadDataId is None
+                ) or (
+                    (
+                        not downloadData.isVideoDownload and
+                        not downloadData.isAudioDownload and
+                        not downloadData.isSubtitleDownload
+                    )
+                ):
+                    print(f"Error: failed to get the 1st download or no download media was selected")
                     continue
 
                 if downloadData.url == None:
@@ -98,7 +108,7 @@ class DownloadQueue:
                         finally:
                             self._downloadDatasRLock.release()
 
-                baseOptions = {
+                downloadOptions = {
                     "ffmpeg_location": str(Paths.ffmpeg()),
                     "js_runtimes": {
                         "quickjs": {
@@ -112,42 +122,79 @@ class DownloadQueue:
                     "retries": 10,
                     "fragment_retries": 10,
                     "concurrent_fragments": 16,
-                    "merge_output_format": downloadData.mediaContainer.value,
+
+                    "skip_download": (
+                        not downloadData.isVideoDownload and
+                        not downloadData.isAudioDownload
+                    ),
+                    "writesubtitles": downloadData.isSubtitleDownload,
+                    "writeautomaticsub": downloadData.isSubtitleDownload,
+                    "subtitleslangs": (
+                        ["all"] if downloadData.isSubtitleDownload else None
+                    ),
+                    "subtitlesformat": (
+                        "best" if downloadData.isSubtitleDownload else None
+                    ),
+
+                    "merge_output_format": (
+                        downloadData.mediaContainer.value if downloadData.isVideoDownload and downloadData.isAudioDownload else None
+                    ),
+                    "remuxvideo": (
+                        downloadData.mediaContainer.value
+                        if downloadData.isVideoDownload
+                        else None
+                    ),
                     "postprocessor_args": {
                         "ffmpeg": [
                             "-threads",
                             str(os.cpu_count() or 1)
                         ]
-                    }
+                    },
+
                 }
 
-                videoOptions = {
-                    **baseOptions,
-                    "format": (
-                        f"bv*[height<={downloadData.videoData.maximumVideoHeight}]+"
-                        f"ba*[abr<={downloadData.audioData.maximumAudioBitRate}]"
-                        f"/b[height<={downloadData.videoData.maximumVideoHeight}]"
+                """
+                maybe need it
+                    "postprocessors": (
+                        [{
+                            "key": "FFmpegExtractAudio",
+                            "preferredcodec": downloadData.audioData.audioCodec
+                        }]
+                        if downloadData.isAudioDownload and not downloadData.isVideoDownload
+                        else None
                     )
-                }
+                """
 
-                audioOptions = {
-                    **baseOptions,
-                    "format": (
-                        f"ba*[abr<={downloadData.audioData.maximumAudioBitRate}]/ba"
-                    ),
-                    "postprocessors": [{
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": downloadData.audioData.audioCodec
-                    }]
-                }
+                videoFormat: str = (
+                    f"bv*"
+                    f"[height<={downloadData.videoData.maximumVideoHeight}]"
+                    f"[vcodec^={downloadData.videoData.videoCodec.value}]"
+                )
 
-                downloadOptions = None
-                if downloadData.downloadType == downloadData.DownloadType.VIDEO:
-                    downloadOptions = videoOptions
-                elif downloadData.downloadType == downloadData.DownloadType.AUDIO:
-                    downloadOptions = audioOptions
-                else:
-                    raise ValueError(f"Error: download data with id '{downloadDataId}' has invalid or unsupported download type '{downloadData.downloadType}'")
+                audioFormat: str = (
+                    f"ba*"
+                    f"[abr<={downloadData.audioData.maximumAudioBitRate}]"
+                    f"[acodec^={downloadData.audioData.audioCodec.value}]"
+                )
+
+                formatString: str | None = (
+                    f"{videoFormat}+{audioFormat}"
+                    if downloadData.isVideoDownload and downloadData.isAudioDownload
+                    else videoFormat
+                    if downloadData.isVideoDownload
+                    else audioFormat
+                    if downloadData.isAudioDownload
+                    else None
+                )
+
+                downloadOptions["format"] = formatString
+
+                # Remove options that are not applicable.
+                downloadOptions = {
+                    key: value
+                    for key, value in downloadOptions.items()
+                    if value is not None
+                }
 
                 import yt_dlp
 

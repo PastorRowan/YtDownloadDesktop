@@ -6,35 +6,45 @@ from enum import Enum
 from typing import ClassVar
 import itertools
 
-@dataclass
-class VideoData:
-
-    class VideoCodec(Enum):
-        AV1 = "av1"
-        VP8 = "vp8"
-        H264 = "h264"
-        H265 = "h265"
-        MPEG4 = "mpeg4"
-    type VideoHeight = int | None
-
-    videoCodec: VideoCodec
-    maximumVideoHeight: VideoHeight
-
-@dataclass
-class AudioData:
-
-    class AudioCodec(Enum):
-        OPUS = "opus"
-        MP4A = "mp4a"
-    type AudioBitRate = int | None
-
-    audioCodec: AudioCodec
-    maximumAudioBitRate: AudioBitRate
-
 class MediaContainer(Enum):
     MP4 = "mp4"
     MKV = "mkv"
     WEBM = "webm"
+
+mediaContainers: tuple[MediaContainer, ...] = tuple(MediaContainer)
+
+@dataclass
+class VideoData:
+
+    type VideoHeight = int
+    class VideoCodec(Enum):
+        AV1 = "av01"
+        VP8 = "vp8"
+        AVC1 = "avc1"
+        AVC3 = "avc3"
+        MPEG4 = "mp4v"
+
+    DEFAULT_MAXIMUM_VIDEO_HEIGHT: VideoHeight = 1080
+    maximumVideoHeight: VideoHeight = DEFAULT_MAXIMUM_VIDEO_HEIGHT
+
+    DEFAULT_VIDEO_CODEC: VideoCodec = VideoCodec.AV1
+    videoCodec: VideoCodec = DEFAULT_VIDEO_CODEC
+    videoCodecs: ClassVar[tuple[VideoCodec, ...]] = tuple(VideoCodec)
+
+@dataclass
+class AudioData:
+
+    type AudioBitRate = int
+    class AudioCodec(Enum):
+        OPUS = "opus"
+        MP4A = "mp4a"
+
+    DEFAULT_MAXIMUM_AUDIO_BIT_RATE: AudioBitRate = 190
+    maximumAudioBitRate: AudioBitRate = DEFAULT_MAXIMUM_AUDIO_BIT_RATE
+
+    DEFAULT_AUDIO_CODEC: AudioCodec = AudioCodec.OPUS
+    audioCodec: AudioCodec = DEFAULT_AUDIO_CODEC
+    audioCodecs: ClassVar[tuple[AudioCodec, ...]] = tuple(AudioCodec)
 
 @dataclass
 class DownloadData:
@@ -43,9 +53,9 @@ class DownloadData:
 
     type Id = int
     type Url = str | None
-    class DownloadType(Enum):
-        VIDEO = "video"
-        AUDIO = "audio"
+    type IsVideoDownload = bool
+    type IsAudioDownload = bool
+    type IsSubtitleDownload = bool
     type Title = str | None
     type ThumbnailLink = str | None
     type DownloadedBytes = float | None
@@ -54,16 +64,18 @@ class DownloadData:
 
     id: Id = field(default_factory=lambda: next(DownloadData._id_counter))
     url: Url = None
-    downloadType: DownloadType = DownloadType.VIDEO
+    isVideoDownload: IsVideoDownload = True
+    isAudioDownload: IsAudioDownload = True
+    isSubtitleDownload: IsSubtitleDownload = False
     title: Title = None
     thumbnailLink: ThumbnailLink = None
     downloadedBytes: DownloadedBytes = None
     totalBytes: TotalBytes = None
     progress: Progress = 0.0
+    mediaContainer: MediaContainer = MediaContainer.MP4
     videoData: VideoData = field(
         default_factory=lambda: VideoData(
             videoCodec=VideoData.VideoCodec.H264,
-            maximumVideoHeight=1080
         )
     )
     audioData: AudioData = field(
@@ -72,7 +84,6 @@ class DownloadData:
             maximumAudioBitRate=200
         )
     )
-    mediaContainer: MediaContainer = MediaContainer.MP4
 
 type DownloadDatas = dict[
     DownloadData.Id,
