@@ -5,6 +5,10 @@ from dataclasses import dataclass
 from pathlib import Path
 import subprocess
 import tkinter as tk
+from tkinter import ttk
+from urllib.parse import urlsplit
+import ipaddress
+import re
 
 @dataclass
 class ValidateBinaryResult:
@@ -46,7 +50,7 @@ class ValidateBinariesResult:
 
 def validateBinaries() -> ValidateBinariesResult:
 
-    def validateExecutable(
+    def _validateExecutable(
         path: Path,
         arguements: list[str],
         expectedReturnCode: int
@@ -106,23 +110,25 @@ def validateBinaries() -> ValidateBinariesResult:
             isWorking=False
         )
 
-    ffmpegResult: ValidateBinaryResult = validateExecutable(
+    ffmpegResult: ValidateBinaryResult = _validateExecutable(
         path=Paths.ffmpeg(),
         arguements=["-version"],
         expectedReturnCode=0
     )
 
-    ffprobeResult: ValidateBinaryResult = validateExecutable(
+    ffprobeResult: ValidateBinaryResult = _validateExecutable(
         path=Paths.ffprobe(),
         arguements=["-version"],
         expectedReturnCode=0
     )
 
-    qjsResult: ValidateBinaryResult = validateExecutable(
+    qjsResult: ValidateBinaryResult = _validateExecutable(
         path=Paths.qjs(),
         arguements=["--eval", "console.log('QuickJS is working!')"],
         expectedReturnCode=0
     )
+
+    print()
 
     return ValidateBinariesResult(
         ffmpeg=ffmpegResult,
@@ -135,10 +141,15 @@ def setWidgetState(
     enabled: bool
 ) -> None:
 
-    state: str = "normal" if enabled else "disabled"
-
     try:
-        widget.configure(state=state)
+        if isinstance(widget, ttk.Combobox):
+            widget.configure(
+                state="readonly" if enabled else "disabled"
+            )
+        elif isinstance(widget, (ttk.Entry, ttk.Checkbutton, ttk.Button)):
+            widget.configure(
+                state="normal" if enabled else "disabled"
+            )
     except tk.TclError:
         pass
 
@@ -147,3 +158,70 @@ def setWidgetState(
             widget=childWidget,
             enabled=enabled
         )
+
+def isValidUrl(url: str) -> bool:
+
+    url = url.strip()
+
+    if not url:
+        return False
+
+    # Reject whitespace and control characters.
+    if any(character.isspace() or ord(character) < 32 for character in url):
+        return False
+
+    try:
+        parsedUrl = urlsplit(url)
+
+        # Only accept web URLs.
+        if parsedUrl.scheme.lower() not in ("http", "https"):
+            return False
+
+        # A hostname is required.
+        hostname = parsedUrl.hostname
+
+        if not hostname:
+            return False
+
+        # Reject URLs containing credentials.
+        if parsedUrl.username is not None or parsedUrl.password is not None:
+            return False
+
+        # Accessing .port raises ValueError for invalid ports.
+        port = parsedUrl.port
+
+        if port is not None and not (1 <= port <= 65535):
+            return False
+
+        # Validate IP addresses, including IPv6.
+        try:
+            ipaddress.ip_address(hostname)
+            return True
+        except ValueError:
+            pass
+
+        # Validate domain names.
+        hostname = hostname.encode("idna").decode("ascii")
+
+        if len(hostname) > 253:
+            return False
+
+        labels = hostname.rstrip(".").split(".")
+
+        if len(labels) < 2:
+            return False
+
+        for label in labels:
+            if not label or len(label) > 63:
+                return False
+
+            if not re.fullmatch(
+                r"[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?",
+                label
+            ):
+                return False
+
+        return True
+
+    except (ValueError, UnicodeError):
+        return False

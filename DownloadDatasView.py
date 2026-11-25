@@ -40,7 +40,6 @@ class DownloadDatasView(ttk.Frame):
 
         downloadDataView.pack(
             fill="x",
-            expand=True,
             padx=5,
             pady=3
         )

@@ -13,6 +13,9 @@ import threading
 
 def main():
 
+    MIN_CONTENT_WIDTH: int = 600
+    MAX_CONTENT_WIDTH: int = 900
+
     downloadQueue: DownloadQueue = DownloadQueue()
 
     root: tk.Tk = tk.Tk()
@@ -71,11 +74,38 @@ def main():
         fill="y"
     )
 
+    contentFrame: ttk.Frame = ttk.Frame(
+        master=scrollableFrame
+    )
+
+    contentFrame.pack(
+        anchor="center",
+        fill="x",
+        expand=False,
+        padx=20
+    )
+
+    contentFrame.configure(
+        width=800
+    )
+
     # Update scrollable area when its contents change
     def on_scrollable_frame_configure(event: tk.Event) -> None:
+
         scrollCanvas.configure(
             scrollregion=scrollCanvas.bbox("all")
         )
+
+        """
+        contentWidth: int = min(
+            MAX_CONTENT_WIDTH,
+            max(1, availableWidth - 40)
+        )
+
+        contentFrame.configure(
+            width=800
+        )
+        """
 
     scrollableFrame.bind(
         "<Configure>",
@@ -130,7 +160,7 @@ def main():
         )
 
     updatingYtDlpPlaceholderLabel: ttk.Label = ttk.Label(
-        master=scrollCanvas,
+        master=contentFrame,
         text="Updating yt-dlp..."
     )
     updatingYtDlpPlaceholderLabel.pack()
@@ -140,33 +170,33 @@ def main():
         updatingYtDlpPlaceholderLabel.pack_forget()
 
         titleLabel: ttk.Label = ttk.Label(
-            master=scrollCanvas,
+            master=contentFrame,
             text="YtDownloadDesktop"
         )
         titleLabel.pack()
 
         # Spacer
         ttk.Frame(
-            master=scrollCanvas,
+            master=contentFrame,
             width=1,
             height=20
         ).pack()
 
         videoLinkEntryLabel: ttk.Label = ttk.Label(
-            master=scrollCanvas,
+            master=contentFrame,
             text="Video link"
         )
         videoLinkEntryLabel.pack()
 
         videoLinkEntry: ttk.Entry = ttk.Entry(
-            master=scrollCanvas,
+            master=contentFrame,
             width=52
         )
         videoLinkEntry.pack()
 
         downloadSettingsFrame: ttk.LabelFrame = ttk.LabelFrame(
-            master=scrollCanvas,
-            text="Download Settings",
+            master=contentFrame,
+            text="Download Settings:",
             padding=10
         )
 
@@ -199,6 +229,45 @@ def main():
         )
         downloadSubtitlesCheckbox.pack(anchor="w")
 
+        # Media container download settings
+
+        downloadMediaContainerSettingsFrame: ttk.Frame = ttk.Frame(
+            master=downloadSettingsFrame
+        )
+        downloadMediaContainerSettingsFrame.pack(fill="x")
+
+        downloadMediaContainerSettingsLabel: ttk.Label = ttk.Label(
+            master=downloadMediaContainerSettingsFrame,
+            text="Media container settings:"
+        )
+        downloadMediaContainerSettingsLabel.grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            sticky="w",
+            padx=5,
+            pady=(10, 2)
+        )
+
+        downloadMediaContainerFormatFrame: ttk.Frame = ttk.Frame(
+            master=downloadMediaContainerSettingsFrame
+        )
+        downloadMediaContainerFormatFrame.grid(row=2, column=0, sticky="ew", padx=5)
+
+        downloadMediaContainerFormatLabel: ttk.Label = ttk.Label(
+            master=downloadMediaContainerFormatFrame,
+            text="Media container format"
+        )
+        downloadMediaContainerFormatLabel.pack(anchor="w")
+
+        downloadMediaContainerFormatComboBox: ttk.Combobox = ttk.Combobox(
+            master=downloadMediaContainerFormatFrame,
+            values=Types.MEDIA_CONTAINER_FORMATS_STR,
+            state="readonly"
+        )
+        downloadMediaContainerFormatComboBox.set(Types.DEFAULT_MEDIA_CONTAINER_FORMAT.value)
+        downloadMediaContainerFormatComboBox.pack(fill="x")
+
         # Video download settings
 
         downloadVideoSettingsFrame: ttk.Frame = ttk.Frame(
@@ -208,7 +277,7 @@ def main():
 
         downloadVideoSettingsLabel: ttk.Label = ttk.Label(
             master=downloadVideoSettingsFrame,
-            text="Video settings"
+            text="Video settings:"
         )
         downloadVideoSettingsLabel.grid(
             row=1,
@@ -232,8 +301,10 @@ def main():
 
         downloadVideoMaximumHeightComboBox: ttk.Combobox = ttk.Combobox(
             master=downloadVideoMaximumHeightFrame,
-            values=("2160", "1440", "1080", "720", "480", "360", "240", "144")
+            values=("2160", "1440", "1080", "720", "480", "360", "240", "144"),
+            state="readonly"
         )
+        downloadVideoMaximumHeightComboBox.set(str(Types.VideoData.DEFAULT_MAXIMUM_VIDEO_HEIGHT))
         downloadVideoMaximumHeightComboBox.pack(fill="x")
 
         downloadVideoCodecFrame: ttk.Frame = ttk.Frame(downloadVideoSettingsFrame)
@@ -247,9 +318,10 @@ def main():
 
         downloadVideoCodecComboBox: ttk.Combobox = ttk.Combobox(
             master=downloadVideoCodecFrame,
-            values=tuple(codec.value for codec in Types.VideoData.videoCodecs),
+            values=Types.VideoData.VIDEO_CODECS_STR,
             state="readonly"
         )
+        downloadVideoCodecComboBox.set(Types.VideoData.DEFAULT_VIDEO_CODEC.value)
         downloadVideoCodecComboBox.pack(fill="x")
 
         def _onDownloadVideoChanged(*args) -> None:
@@ -274,7 +346,7 @@ def main():
 
         downloadAudioSettingsLabel: ttk.Label = ttk.Label(
             master=downloadAudioSettingsFrame,
-            text="Audio settings"
+            text="Audio settings:"
         )
         downloadAudioSettingsLabel.grid(
             row=3,
@@ -290,7 +362,7 @@ def main():
 
         downloadAudioMaximumBitRateLabel: ttk.Label = ttk.Label(
             master=downloadAudioMaximumBitRateFrame,
-            text="Maximum bitrate (kbps)"
+            text="Audio bitrate (kbps)"
         )
         downloadAudioMaximumBitRateLabel.pack(anchor="w")
 
@@ -299,6 +371,7 @@ def main():
             values=("190", "160", "140"),
             state="readonly"
         )
+        downloadAudioMaximumBitRateComboBox.set(str(Types.AudioData.DEFAULT_MAXIMUM_AUDIO_BIT_RATE))
         downloadAudioMaximumBitRateComboBox.pack(fill="x")
 
         downloadAudioCodecFrame: ttk.Frame = ttk.Frame(downloadAudioSettingsFrame)
@@ -312,9 +385,10 @@ def main():
 
         downloadAudioCodecComboBox: ttk.Combobox = ttk.Combobox(
             master=downloadAudioCodecFrame,
-            values=tuple(codec.value for codec in Types.AudioData.audioCodecs),
+            values=Types.AudioData.AUDIO_CODECS_STR,
             state="readonly"
         )
+        downloadAudioCodecComboBox.set(Types.AudioData.DEFAULT_AUDIO_CODEC.value)
         downloadAudioCodecComboBox.pack(fill="x")
 
         def _onDownloadAudioChanged(*args) -> None:
@@ -338,7 +412,7 @@ def main():
         downloadSettingsFrame.pack()
 
         downloadDatasView: DownloadDatasView = DownloadDatasView(
-            master=root
+            master=contentFrame
         )
         downloadDatasView.pack(fill="x", expand=True)
 
@@ -385,6 +459,12 @@ def main():
 
             try:
 
+                # Collect media container settings
+
+                mediaContainerFormat: Types.MediaContainerFormat = Types.MediaContainerFormat(
+                    downloadMediaContainerFormatComboBox.get()
+                )
+
                 # Collect video settings.
                 videoData: Types.VideoData = Types.VideoData()
 
@@ -417,6 +497,7 @@ def main():
                     isVideoDownload=isVideoDownload,
                     isAudioDownload=isAudioDownload,
                     isSubtitleDownload=isSubtitleDownload,
+                    mediaContainerFormat=mediaContainerFormat,
                     videoData=videoData,
                     audioData=audioData
                 )
@@ -436,16 +517,16 @@ def main():
                     parent=root
                 )
 
-            videoLinkEntry.bind(
-                "<Return>",
-                lambda event: _onDownloadRequest()
-            )
+        videoLinkEntry.bind(
+            "<Return>",
+            lambda event: _onDownloadRequest()
+        )
 
-            # Download button click.
-            downloadButton.bind(
-                "<Button-1>",
-                lambda event: _onDownloadRequest()
-            )
+        # Download button click.
+        downloadButton.bind(
+            "<Button-1>",
+            lambda event: _onDownloadRequest()
+        )
 
     def update_yt_dlp_worker():
         try:
@@ -460,7 +541,9 @@ def main():
     )
     t.start()
 
+    print("Main loop is running")
     root.mainloop()
+    print("Main loop is done running")
 
 if __name__ == "__main__":
     main()

@@ -137,10 +137,10 @@ class DownloadQueue:
                     ),
 
                     "merge_output_format": (
-                        downloadData.mediaContainer.value if downloadData.isVideoDownload and downloadData.isAudioDownload else None
+                        downloadData.mediaContainerFormat.value if downloadData.isVideoDownload and downloadData.isAudioDownload else None
                     ),
                     "remuxvideo": (
-                        downloadData.mediaContainer.value
+                        downloadData.mediaContainerFormat.value
                         if downloadData.isVideoDownload
                         else None
                     ),

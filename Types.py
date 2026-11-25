@@ -6,12 +6,15 @@ from enum import Enum
 from typing import ClassVar
 import itertools
 
-class MediaContainer(Enum):
+class MediaContainerFormat(Enum):
     MP4 = "mp4"
     MKV = "mkv"
     WEBM = "webm"
 
-mediaContainers: tuple[MediaContainer, ...] = tuple(MediaContainer)
+DEFAULT_MEDIA_CONTAINER_FORMAT = MediaContainerFormat.WEBM
+
+MEDIA_CONTAINER_FORMATS: tuple[MediaContainerFormat, ...] = tuple(MediaContainerFormat)
+MEDIA_CONTAINER_FORMATS_STR: tuple[str, ...] = tuple(mediaContainerFormat.value for mediaContainerFormat in MediaContainerFormat)
 
 @dataclass
 class VideoData:
@@ -24,12 +27,13 @@ class VideoData:
         AVC3 = "avc3"
         MPEG4 = "mp4v"
 
-    DEFAULT_MAXIMUM_VIDEO_HEIGHT: VideoHeight = 1080
+    DEFAULT_MAXIMUM_VIDEO_HEIGHT: VideoHeight = 720
     maximumVideoHeight: VideoHeight = DEFAULT_MAXIMUM_VIDEO_HEIGHT
 
     DEFAULT_VIDEO_CODEC: VideoCodec = VideoCodec.AV1
     videoCodec: VideoCodec = DEFAULT_VIDEO_CODEC
-    videoCodecs: ClassVar[tuple[VideoCodec, ...]] = tuple(VideoCodec)
+    VIDEO_CODECS: ClassVar[tuple[VideoCodec, ...]] = tuple(VideoCodec)
+    VIDEO_CODECS_STR: ClassVar[tuple[str, ...]] = tuple(videoCodec.value for videoCodec in VideoCodec)
 
 @dataclass
 class AudioData:
@@ -44,7 +48,8 @@ class AudioData:
 
     DEFAULT_AUDIO_CODEC: AudioCodec = AudioCodec.OPUS
     audioCodec: AudioCodec = DEFAULT_AUDIO_CODEC
-    audioCodecs: ClassVar[tuple[AudioCodec, ...]] = tuple(AudioCodec)
+    AUDIO_CODECS: ClassVar[tuple[AudioCodec, ...]] = tuple(AudioCodec)
+    AUDIO_CODECS_STR: ClassVar[tuple[str, ...]] = tuple(audioCodec.value for audioCodec in AudioCodec)
 
 @dataclass
 class DownloadData:
@@ -72,18 +77,9 @@ class DownloadData:
     downloadedBytes: DownloadedBytes = None
     totalBytes: TotalBytes = None
     progress: Progress = 0.0
-    mediaContainer: MediaContainer = MediaContainer.MP4
-    videoData: VideoData = field(
-        default_factory=lambda: VideoData(
-            videoCodec=VideoData.VideoCodec.H264,
-        )
-    )
-    audioData: AudioData = field(
-        default_factory=lambda: AudioData(
-            audioCodec=AudioData.AudioCodec.MP4A,
-            maximumAudioBitRate=200
-        )
-    )
+    mediaContainerFormat: MediaContainerFormat = DEFAULT_MEDIA_CONTAINER_FORMAT
+    videoData: VideoData = field(default_factory=VideoData)
+    audioData: AudioData = field(default_factory=AudioData)
 
 type DownloadDatas = dict[
     DownloadData.Id,
