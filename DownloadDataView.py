@@ -28,7 +28,8 @@ class DownloadDataView(ttk.Frame):
             orient="horizontal",
             mode="determinate",
             maximum=100,
-            value=0
+            value=0,
+            style="Download.Horizontal.TProgressbar"
         )
         self.progressBar.pack(fill="x")
 
@@ -38,9 +39,16 @@ class DownloadDataView(ttk.Frame):
         self,
         downloadData: Types.DownloadData
     ) -> None:
-        self.titleLabel.configure(
-            text=downloadData.title or "Preparing download..."
-        )
-        self.progressBar.configure(
-            value=downloadData.progress * 100
-        )
+
+        title = downloadData.title or "Preparing download..."
+        progress = downloadData.progress * 100
+
+        if title != self.titleLabel.cget("text"):
+            self.titleLabel.configure(
+                text=title
+            )
+
+        if progress != self.progressBar.cget("value"):
+            self.progressBar.configure(
+                value=progress
+            )

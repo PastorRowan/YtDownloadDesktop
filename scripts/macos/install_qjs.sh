@@ -56,4 +56,3 @@ make clean
 # This acts as a basic test to verify that QuickJS compiled successfully
 # and that the interpreter can execute JavaScript code.
 ./qjs -e 'console.log("QuickJS is working!")'
-

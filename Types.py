@@ -8,10 +8,8 @@ import itertools
 
 class MediaContainerFormat(Enum):
     MP4 = "mp4"
-    MKV = "mkv"
-    WEBM = "webm"
 
-DEFAULT_MEDIA_CONTAINER_FORMAT = MediaContainerFormat.WEBM
+DEFAULT_MEDIA_CONTAINER_FORMAT = MediaContainerFormat.MP4
 
 MEDIA_CONTAINER_FORMATS: tuple[MediaContainerFormat, ...] = tuple(MediaContainerFormat)
 MEDIA_CONTAINER_FORMATS_STR: tuple[str, ...] = tuple(mediaContainerFormat.value for mediaContainerFormat in MediaContainerFormat)
@@ -22,7 +20,6 @@ class VideoData:
     type VideoHeight = int
     class VideoCodec(Enum):
         AV1 = "av01"
-        VP8 = "vp8"
         AVC1 = "avc1"
         AVC3 = "avc3"
         MPEG4 = "mp4v"

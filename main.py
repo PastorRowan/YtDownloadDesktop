@@ -13,8 +13,9 @@ import threading
 
 def main():
 
+    # Cant seem to get this shit working
     MIN_CONTENT_WIDTH: int = 600
-    MAX_CONTENT_WIDTH: int = 900
+    MAX_CONTENT_WIDTH: int = 1600
 
     downloadQueue: DownloadQueue = DownloadQueue()
 
@@ -80,13 +81,7 @@ def main():
 
     contentFrame.pack(
         anchor="center",
-        fill="x",
-        expand=False,
         padx=20
-    )
-
-    contentFrame.configure(
-        width=800
     )
 
     # Update scrollable area when its contents change
@@ -96,17 +91,6 @@ def main():
             scrollregion=scrollCanvas.bbox("all")
         )
 
-        """
-        contentWidth: int = min(
-            MAX_CONTENT_WIDTH,
-            max(1, availableWidth - 40)
-        )
-
-        contentFrame.configure(
-            width=800
-        )
-        """
-
     scrollableFrame.bind(
         "<Configure>",
         on_scrollable_frame_configure
@@ -114,10 +98,30 @@ def main():
 
     # Make the scrollable frame match the canvas width
     def on_scroll_canvas_configure(event: tk.Event) -> None:
+
+        """
+        availableWidth: int = event.width - 40
+
+        print("availableWidth: ", availableWidth)
+
+        contentWidth: int = min(
+            MAX_CONTENT_WIDTH,
+            max(MIN_CONTENT_WIDTH, availableWidth)
+        )
+        """
+
         scrollCanvas.itemconfigure(
             scrollableFrameWindow,
             width=event.width
         )
+
+        """
+        if contentFrame.winfo_width() != contentWidth:
+            print("Setting contentFrame width to: ", contentWidth)
+            contentFrame.configure(
+                width=contentWidth
+            )
+        """
 
     scrollCanvas.bind(
         "<Configure>",
@@ -439,10 +443,10 @@ def main():
             isSubtitleDownload: bool = downloadSubtitlesBooleanVar.get()
 
             # Validate the URL.
-            if not videoUrl:
+            if not utils.isValidUrl(url=videoUrl):
                 messagebox.showwarning(
-                    title="Missing URL",
-                    message="Please enter a video URL.",
+                    title="Missing or invalid URL",
+                    message="Please enter a valid video URL.",
                     parent=root
                 )
                 videoLinkEntry.focus_set()
@@ -502,6 +506,11 @@ def main():
                     audioData=audioData
                 )
 
+                youtubeVideoMetadata: utils.YoutubeVideoMetadata | None = utils.getYoutubeVideoMetadata(videoUrl)
+
+                if youtubeVideoMetadata is not None:
+                    downloadData.title = youtubeVideoMetadata.title
+
                 # Submit the download to the queue.
                 if not downloadQueue.addDownload(downloadData):
                     messagebox.showerror(
@@ -541,9 +550,7 @@ def main():
     )
     t.start()
 
-    print("Main loop is running")
     root.mainloop()
-    print("Main loop is done running")
 
 if __name__ == "__main__":
     main()
